@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { modules } from "../data/modules";
+import { projects } from "../data/projects";
 import { Search } from "lucide-react";
 
 interface SidebarProps {
@@ -9,9 +10,12 @@ interface SidebarProps {
 
 export function Sidebar({ onSelect }: SidebarProps) {
   const navigate = useNavigate();
-  const { moduleId } = useParams();
+  const { moduleId, projectId } = useParams();
+  const location = useLocation();
   const [query, setQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
+
+  const isProjectRoute = location.pathname.startsWith("/projects");
 
   const searchResults = query.trim()
     ? modules.flatMap((mod) =>
@@ -32,6 +36,13 @@ export function Sidebar({ onSelect }: SidebarProps) {
     onSelect?.();
   };
 
+  const handleProjectClick = (id: string) => {
+    navigate(`/projects/${id}`);
+    setQuery("");
+    setShowResults(false);
+    onSelect?.();
+  };
+
   const handleSearchSelect = (moduleId: string, qaId: number) => {
     navigate(`/module/${moduleId}?q=${qaId}`);
     setQuery("");
@@ -41,10 +52,10 @@ export function Sidebar({ onSelect }: SidebarProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Module navigation */}
       <nav className="flex-1 overflow-y-auto p-3">
+        {/* 后端八股文 */}
         <div className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2">
-          知识模块
+          后端八股文
         </div>
         {modules.map((mod) => (
           <button
@@ -54,7 +65,7 @@ export function Sidebar({ onSelect }: SidebarProps) {
               w-full text-left px-3 py-2.5 rounded-lg mb-1 text-sm font-medium
               transition-colors duration-100
               ${
-                moduleId === mod.id
+                moduleId === mod.id && !isProjectRoute
                   ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
                   : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
               }
@@ -63,6 +74,31 @@ export function Sidebar({ onSelect }: SidebarProps) {
             {mod.title}
             <span className="ml-2 text-xs text-gray-400 dark:text-slate-500">
               ({mod.questions.length})
+            </span>
+          </button>
+        ))}
+
+        {/* 项目经历 */}
+        <div className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2 mt-6 pt-4 border-t border-gray-200 dark:border-slate-800">
+          项目经历
+        </div>
+        {projects.map((proj) => (
+          <button
+            key={proj.id}
+            onClick={() => handleProjectClick(proj.id)}
+            className={`
+              w-full text-left px-3 py-2.5 rounded-lg mb-1 text-sm font-medium
+              transition-colors duration-100
+              ${
+                projectId === proj.id || (isProjectRoute && location.pathname === "/projects")
+                  ? "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                  : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+              }
+            `}
+          >
+            {proj.title}
+            <span className="ml-2 text-xs text-gray-400 dark:text-slate-500">
+              ({proj.followUpQuestions.length})
             </span>
           </button>
         ))}
@@ -77,7 +113,7 @@ export function Sidebar({ onSelect }: SidebarProps) {
           />
           <input
             type="text"
-            placeholder="搜索问题..."
+            placeholder="搜索八股文问题..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
